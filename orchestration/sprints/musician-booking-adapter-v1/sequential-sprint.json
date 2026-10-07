@@ -178,7 +178,7 @@
         {
           "task_id": "MUSIC-005",
           "queue": "worker-all",
-          "message": "Реализуй loader для profiles/musician-booking/profile.yaml + role.md/communication.md/authority.md/domain.md. Валидируй paths/version/mode; возвращай exact Git provenance when available. В MVP профиль используется для interpretation/proposal context, но DRAFT_ONLY не даёт autonomous send."
+          "message": "Реализуй loader для общего profiles/musician-booking/* и artist-specific profiles under artists/<artist-id>/. Добавь deterministic artist resolution: explicit project/artist id -> mailbox/thread mapping -> configured contact/project mapping -> content-based candidate suggestion only. При ambiguity route clarification_required, не создавай proposal. Сохраняй artist_id, profile version and exact Git commit in provenance. MVP DRAFT_ONLY не даёт autonomous send."
         }
       ],
       "transitions": {
@@ -206,7 +206,7 @@
         {
           "task_id": "MUSIC-006",
           "queue": "worker-all",
-          "message": "Реализуй proposal builder для концертной работы. Если данных достаточно, формируй proposal со specialist roles: Booking Manager, Venue Researcher, Artist Manager, PR/Promotion Manager, Logistics Coordinator и при необходимости Commercial/Contract Reviewer. Если критические данные отсутствуют — route clarification_required вместо proposal. Proposal не активирует sprint напрямую."
+          "message": "Реализуй proposal builder для концертной работы с учётом выбранного artist profile. Specialist roles остаются общими, но задачи/ограничения должны учитывать preferred markets, exclusions, availability constraints, fee boundaries, rider/promotion data and authority rules конкретного артиста. Если artist не определён однозначно или критические данные отсутствуют — clarification_required. Proposal не активирует sprint напрямую."
         }
       ],
       "transitions": {
@@ -262,7 +262,7 @@
         {
           "task_id": "MUSIC-008",
           "queue": "tester-all",
-          "message": "Проведи isolated qualification: одинаковый концертный запрос через Email/Telegram -> equivalent domain context; venue/date/fee/rider/logistics extraction; missing data never fabricated; contract/fee/cancellation ambiguity escalates; ordinary correspondence creates no sprint proposal; complete concert request creates specialist proposal; DRAFT_ONLY sends nothing autonomously; no direct nginx-qa activation. Собери evidence and return PASS, FAIL, NEED_DECISION or STOP."
+          "message": "Проведи isolated qualification: минимум два artist profiles с разными booking rules; один и тот же тип запроса должен давать разные proposal constraints для разных artist_id; ambiguous artist -> clarification_required; explicit artist id wins over inference; Email/Telegram parity; venue/date/fee/rider/logistics extraction; missing data not fabricated; contract/fee/cancellation ambiguity escalates; ordinary correspondence no sprint; DRAFT_ONLY no autonomous send; no direct nginx-qa activation. Evidence must include exact artist profile Git provenance."
         }
       ],
       "transitions": {
