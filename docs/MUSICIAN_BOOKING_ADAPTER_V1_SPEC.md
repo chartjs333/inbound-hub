@@ -84,3 +84,54 @@ Output:
 - proposed specialist roles when a sprint is appropriate
 
 The implementation must be source-neutral: the same email or Telegram message describing the same concert request should produce equivalent domain context.
+
+
+## Multi-artist support
+
+The Musician Booking Domain Adapter is shared across artists. Artist-specific behavior is loaded from an Artist Profile selected before proposal generation.
+
+Suggested structure:
+
+```text
+artists/<artist-id>/
+  artist.yaml
+  identity.md
+  booking.md
+  repertoire.md
+  rider.md
+  promotion.md
+  authority.md
+```
+
+`artist.yaml` should contain machine-readable fields such as:
+- artist_id
+- display_name
+- active/inactive
+- genres/instrument
+- home_city/country
+- preferred_markets
+- excluded_markets
+- typical_fee_min/max/currency (optional)
+- minimum_notice_days
+- default_performance_duration
+- profile file paths
+- escalation rules
+
+The Markdown files hold richer context:
+- identity.md — positioning, biography, artist identity
+- booking.md — booking preferences, preferred venues/events, timing constraints
+- repertoire.md — program/repertoire context
+- rider.md — technical/hospitality requirements
+- promotion.md — press kit, positioning, promo requirements
+- authority.md — what may or may not be decided automatically
+
+Artist resolution order:
+1. explicit artist/project id in source metadata;
+2. known mailbox/thread/project mapping;
+3. configured contact/project mapping;
+4. content-based candidate resolution only as a suggestion;
+5. if ambiguous, route to clarification_required and do not create a sprint proposal.
+
+The selected artist profile and exact Git commit must be attached to MusicianBookingContext/proposal provenance.
+
+The same source message must never silently switch artists based only on model inference.
