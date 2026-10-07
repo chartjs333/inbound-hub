@@ -1,0 +1,335 @@
+{
+  "schema_version": 1,
+  "sprint_type": "managed_workspace_v1",
+  "git_address": "https://github.com/chartjs333/inbound-hub.git",
+  "git": {
+    "source_ref": "refs/heads/codex/musician-booking-adapter-v1",
+    "expected_source_commit": null,
+    "assigned_branch": "agent/musician-booking-adapter-root",
+    "existing_branch_policy": "create"
+  },
+  "execution": {
+    "mode": "sequential",
+    "start_node": "domain-contract",
+    "required_approvals": 2,
+    "max_rework_cycles": 20,
+    "reviewers": [
+      {
+        "id": "musician-domain-reviewer",
+        "name": "Musician Domain Architecture Reviewer",
+        "phone": "2991",
+        "git_branch": "review/musician-booking-domain",
+        "profile": "Проверяй source neutrality, domain boundaries, booking semantics, structured extraction and no direct activation or unauthorized commercial/legal commitments."
+      },
+      {
+        "id": "musician-evidence-reviewer",
+        "name": "Musician Booking Evidence Reviewer",
+        "phone": "2992",
+        "git_branch": "review/musician-booking-evidence",
+        "profile": "Проверяй fixtures/tests, Email/Telegram parity, missing-field behavior, proposal roles, safety gates and absence of autonomous correspondence in MVP."
+      }
+    ]
+  },
+  "workspace_policy": {
+    "reject_parent_repository": true,
+    "dirty_policy": "coordinator",
+    "diverged_branch_policy": "coordinator"
+  },
+  "process_policy": {
+    "host": "127.0.0.1",
+    "restart_policy": "never",
+    "max_restart_attempts": 0
+  },
+  "files": [
+    {
+      "path": "orchestration/sprints/musician-booking-adapter-v1/.manifest-anchor",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "coordinator": {
+    "node_id": "continuity-coordinator",
+    "routes": {
+      "STOP": "continuity-coordinator",
+      "NEED_DECISION": "continuity-coordinator"
+    }
+  },
+  "nodes": [
+    {
+      "id": "domain-contract",
+      "agent": {
+        "id": "musician-domain-architect",
+        "name": "Musician Booking Domain Architect",
+        "phone": "2982",
+        "profile": "Владелец domain contract, intent taxonomy, extracted fields and coordinator handoff."
+      },
+      "tasks": [
+        {
+          "task_id": "MUSIC-001",
+          "queue": "worker-all",
+          "message": "Прочитай docs/MUSICIAN_BOOKING_ADAPTER_V1_SPEC.md и profiles/musician-booking/*. Зафиксируй typed MusicianBookingContext, intent taxonomy, required/optional fields, missing-info semantics and source-neutral coordinator route contract. Не добавляй direct nginx-qa activation или autonomous replies."
+        }
+      ],
+      "transitions": {
+        "DONE": "domain-model",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/music-01-domain-contract",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "domain-model",
+      "agent": {
+        "id": "musician-model-engineer",
+        "name": "Musician Booking Model Engineer",
+        "phone": "2983",
+        "profile": "Владелец typed booking context, validation and canonical serialization."
+      },
+      "tasks": [
+        {
+          "task_id": "MUSIC-002",
+          "queue": "worker-all",
+          "message": "Реализуй typed model MusicianBookingContext: artist/project, organizer/contact, venue, city/country, date/time, event type, capacity, fee/currency/payment terms, performance duration, technical/hospitality rider, travel/accommodation, promotion, deadlines, attachments, confidence, missing_fields and source provenance. Добавь canonical serialization and validation tests."
+        }
+      ],
+      "transitions": {
+        "DONE": "intent-classifier",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/music-02-domain-model",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "intent-classifier",
+      "agent": {
+        "id": "musician-classifier-engineer",
+        "name": "Musician Booking Classifier Engineer",
+        "phone": "2984",
+        "profile": "Владелец domain intent classification and safe routing."
+      },
+      "tasks": [
+        {
+          "task_id": "MUSIC-003",
+          "queue": "worker-all",
+          "message": "Реализуй domain classifier для intents: new_concert_offer, venue_outreach_opportunity, availability_request, fee_or_budget_question, technical_rider_request, hospitality_or_travel_question, contract_or_legal_question, promotion_or_press_request, schedule_change, cancellation, ordinary_correspondence, clarification_required, ignore. Возвращай confidence/rationale; legal/fee/cancellation ambiguity эскалируй."
+        }
+      ],
+      "transitions": {
+        "DONE": "field-extractor",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/music-03-intent-classifier",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "field-extractor",
+      "agent": {
+        "id": "musician-extractor-engineer",
+        "name": "Musician Booking Extraction Engineer",
+        "phone": "2985",
+        "profile": "Владелец extraction of concert terms and explicit unknown/missing state."
+      },
+      "tasks": [
+        {
+          "task_id": "MUSIC-004",
+          "queue": "worker-all",
+          "message": "Реализуй extraction layer from normalized InboundEvent into MusicianBookingContext. Не додумывай отсутствующие цены/даты/условия. Явно отмечай missing_fields. Нормализуй currency/date/time только при достаточных данных и сохраняй исходный текст/provenance reference. Добавь fixtures на venue offers, rider questions, fee questions and cancellations."
+        }
+      ],
+      "transitions": {
+        "DONE": "profile-loader",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/music-04-field-extractor",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "profile-loader",
+      "agent": {
+        "id": "musician-profile-engineer",
+        "name": "Musician Communication Profile Engineer",
+        "phone": "2986",
+        "profile": "Владелец Git-versioned musician booking profile loading, but not autonomous sending."
+      },
+      "tasks": [
+        {
+          "task_id": "MUSIC-005",
+          "queue": "worker-all",
+          "message": "Реализуй loader для profiles/musician-booking/profile.yaml + role.md/communication.md/authority.md/domain.md. Валидируй paths/version/mode; возвращай exact Git provenance when available. В MVP профиль используется для interpretation/proposal context, но DRAFT_ONLY не даёт autonomous send."
+        }
+      ],
+      "transitions": {
+        "DONE": "proposal-builder",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/music-05-profile-loader",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "proposal-builder",
+      "agent": {
+        "id": "musician-proposal-engineer",
+        "name": "Musician Sprint Proposal Engineer",
+        "phone": "2987",
+        "profile": "Владелец mapping domain context to specialist sprint proposal roles and tasks."
+      },
+      "tasks": [
+        {
+          "task_id": "MUSIC-006",
+          "queue": "worker-all",
+          "message": "Реализуй proposal builder для концертной работы. Если данных достаточно, формируй proposal со specialist roles: Booking Manager, Venue Researcher, Artist Manager, PR/Promotion Manager, Logistics Coordinator и при необходимости Commercial/Contract Reviewer. Если критические данные отсутствуют — route clarification_required вместо proposal. Proposal не активирует sprint напрямую."
+        }
+      ],
+      "transitions": {
+        "DONE": "coordinator-integration",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/music-06-proposal-builder",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "coordinator-integration",
+      "agent": {
+        "id": "musician-integration-engineer",
+        "name": "Musician Domain Integration Engineer",
+        "phone": "2988",
+        "profile": "Владелец plugin registration into central coordinator without source-specific branching."
+      },
+      "tasks": [
+        {
+          "task_id": "MUSIC-007",
+          "queue": "worker-all",
+          "message": "Подключи Musician Booking Domain Adapter к центральному coordinator как domain handler/plugin. Один и тот же смысл из Email и Telegram должен давать эквивалентный MusicianBookingContext. Source adapters остаются generic. Добавь project/domain resolution hook and no hardcoded artist identity."
+        }
+      ],
+      "transitions": {
+        "DONE": "qualification",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/music-07-coordinator-integration",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "qualification",
+      "agent": {
+        "id": "musician-qa-engineer",
+        "name": "Musician Booking QA Engineer",
+        "phone": "2989",
+        "profile": "Независимый QA domain parity, extraction accuracy, proposal roles and safety boundaries."
+      },
+      "tasks": [
+        {
+          "task_id": "MUSIC-008",
+          "queue": "tester-all",
+          "message": "Проведи isolated qualification: одинаковый концертный запрос через Email/Telegram -> equivalent domain context; venue/date/fee/rider/logistics extraction; missing data never fabricated; contract/fee/cancellation ambiguity escalates; ordinary correspondence creates no sprint proposal; complete concert request creates specialist proposal; DRAFT_ONLY sends nothing autonomously; no direct nginx-qa activation. Собери evidence and return PASS, FAIL, NEED_DECISION or STOP."
+        }
+      ],
+      "transitions": {
+        "PASS": "completed",
+        "FAIL": "continuity-coordinator",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/music-08-qualification",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "continuity-coordinator",
+      "agent": {
+        "id": "musician-continuity-coordinator",
+        "name": "Musician Booking Continuity Coordinator",
+        "phone": "2980",
+        "profile": "Исправляет только future sprint-owned plan; не принимает коммерческие/юридические решения за человека."
+      },
+      "tasks": [
+        {
+          "task_id": "MUSIC-COORD",
+          "queue": "consultant-all",
+          "message": "Проанализируй blocker/result/review and return one RESUME_CONTRACT, RESUME_MODEL, RESUME_CLASSIFIER, RESUME_EXTRACTOR, RESUME_PROFILE, RESUME_PROPOSAL, RESUME_INTEGRATION, RESUME_QA or BLOCKED_EXTERNAL. Не разрешай autonomous commercial/legal commitments."
+        }
+      ],
+      "transitions": {
+        "RESUME_CONTRACT": "domain-contract",
+        "RESUME_MODEL": "domain-model",
+        "RESUME_CLASSIFIER": "intent-classifier",
+        "RESUME_EXTRACTOR": "field-extractor",
+        "RESUME_PROFILE": "profile-loader",
+        "RESUME_PROPOSAL": "proposal-builder",
+        "RESUME_INTEGRATION": "coordinator-integration",
+        "RESUME_QA": "qualification",
+        "BLOCKED_EXTERNAL": "blocked-external"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/music-continuity-coordinator",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "completed",
+      "type": "terminal",
+      "status": "DONE",
+      "message": "Musician Booking Domain Adapter v1 passed isolated qualification."
+    },
+    {
+      "id": "blocked-external",
+      "type": "terminal",
+      "status": "BLOCKED_EXTERNAL",
+      "message": "External artist/project information or operator decision is required."
+    },
+    {
+      "id": "failed",
+      "type": "terminal",
+      "status": "FAILED",
+      "message": "Musician Booking Domain Adapter v1 failed qualification."
+    }
+  ]
+}
