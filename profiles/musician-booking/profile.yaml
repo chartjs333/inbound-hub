@@ -1,0 +1,9 @@
+profile_id: musician-booking
+version: 1
+language: ru
+domain: concert-booking
+mode: DRAFT_ONLY
+role_file: role.md
+communication_file: communication.md
+authority_file: authority.md
+domain_file: domain.md
