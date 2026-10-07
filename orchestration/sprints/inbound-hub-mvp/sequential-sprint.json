@@ -1,0 +1,422 @@
+{
+  "schema_version": 1,
+  "sprint_type": "managed_workspace_v1",
+  "git_address": "https://github.com/chartjs333/inbound-hub.git",
+  "git": {
+    "source_ref": "refs/heads/codex/inbound-hub-bootstrap",
+    "expected_source_commit": null,
+    "assigned_branch": "agent/inbound-hub-mvp-root",
+    "existing_branch_policy": "create"
+  },
+  "execution": {
+    "mode": "sequential",
+    "start_node": "architecture",
+    "required_approvals": 2,
+    "max_rework_cycles": 20,
+    "reviewers": [
+      {
+        "id": "hub-architecture-reviewer",
+        "name": "Inbound Hub Architecture Reviewer",
+        "phone": "2961",
+        "git_branch": "review/inbound-hub-architecture",
+        "profile": "Проверяй service boundary, adapter isolation, normalized event contract, proposal idempotency, nginx-qa API boundary, absence of source secrets in Git/state, and no direct nginx-qa runtime coupling."
+      },
+      {
+        "id": "hub-evidence-reviewer",
+        "name": "Inbound Hub Evidence Reviewer",
+        "phone": "2962",
+        "git_branch": "review/inbound-hub-evidence",
+        "profile": "Проверяй tests/evidence, restart behavior, dedupe, Telegram observability, tray/service lifecycle, Windows compatibility and no credential leakage."
+      }
+    ]
+  },
+  "workspace_policy": {
+    "reject_parent_repository": true,
+    "dirty_policy": "coordinator",
+    "diverged_branch_policy": "coordinator"
+  },
+  "process_policy": {
+    "host": "127.0.0.1",
+    "restart_policy": "never",
+    "max_restart_attempts": 0
+  },
+  "files": [
+    {
+      "path": "orchestration/sprints/inbound-hub-mvp/.manifest-anchor",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "coordinator": {
+    "node_id": "continuity-coordinator",
+    "routes": {
+      "STOP": "continuity-coordinator",
+      "NEED_DECISION": "continuity-coordinator"
+    }
+  },
+  "nodes": [
+    {
+      "id": "architecture",
+      "agent": {
+        "id": "hub-architecture-engineer",
+        "name": "Inbound Hub Architecture Engineer",
+        "phone": "2971",
+        "profile": "Владелец архитектуры сервиса, adapter contract, event model, persistence, API boundaries and service lifecycle."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-001",
+          "queue": "worker-all",
+          "message": "Прочитай README.md, docs/ARCHITECTURE.md, docs/NGINX_QA_INTEGRATION.md и текущий bootstrap. Зафиксируй implementation plan и точные contracts для adapters, normalized events, coordinator, proposals, persistence, nginx-qa client, notifications, Windows service and tray controller. Не добавляй autonomous correspondence в MVP."
+        }
+      ],
+      "transitions": {
+        "DONE": "event-core",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-01-architecture",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "event-core",
+      "agent": {
+        "id": "hub-event-engineer",
+        "name": "Inbound Event Core Engineer",
+        "phone": "2972",
+        "profile": "Владелец normalized event model, dedupe fingerprints and source-neutral persistence keys."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-002",
+          "queue": "worker-all",
+          "message": "Доработай src/inbound_hub/events.py и добавь persistence model для normalized events: stable fingerprint, channel/external_message_id uniqueness, conversation binding, attachments metadata, source provenance and secret-safe metadata. Добавь deterministic canonicalization and duplicate-delivery tests."
+        }
+      ],
+      "transitions": {
+        "DONE": "email-adapter",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-02-event-core",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "email-adapter",
+      "agent": {
+        "id": "hub-email-engineer",
+        "name": "Email Source Adapter Engineer",
+        "phone": "2973",
+        "profile": "Владелец первого production-grade source adapter with safe credential boundary and polling lifecycle."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-003",
+          "queue": "worker-all",
+          "message": "Реализуй Email adapter как plugin/source adapter. MVP допускает polling. Credentials только через environment/local secret boundary, не в Git и не в normalized event. Поддержи provider message identity, thread identity, sender/subject/body/attachment metadata, last-seen checkpoint, retry/backoff and dedupe. Добавь fake provider tests без реального mailbox."
+        }
+      ],
+      "transitions": {
+        "DONE": "adapter-runtime",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-03-email-adapter",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "adapter-runtime",
+      "agent": {
+        "id": "hub-adapter-runtime-engineer",
+        "name": "Adapter Runtime Engineer",
+        "phone": "2974",
+        "profile": "Владелец lifecycle всех source adapters, health/status and plugin registration."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-004",
+          "queue": "worker-all",
+          "message": "Реализуй общий adapter runtime: registry/plugins, Running/Paused/Error states, configurable poll intervals, per-adapter last-check/last-success/error metadata, graceful start/stop and independent failure isolation. Email adapter подключи через этот runtime. Оставь extension points для Telegram/Folder/Other."
+        }
+      ],
+      "transitions": {
+        "DONE": "coordinator",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-04-adapter-runtime",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "coordinator",
+      "agent": {
+        "id": "hub-coordinator-engineer",
+        "name": "Inbound Coordinator Engineer",
+        "phone": "2975",
+        "profile": "Владелец classification/routing brain, project resolution and proposal lifecycle orchestration."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-005",
+          "queue": "worker-all",
+          "message": "Реализуй основной coordinator поверх normalized events. Routes: correspondence_only, clarification_required, new_sprint, sprint_update, ignore. Для MVP correspondence/clarification только фиксируй и уведомляй оператора; autonomous replies запрещены. Для new_sprint создай proposal candidate; для sprint_update подготовь безопасный update intent. Добавь confidence, rationale, missing-info and project resolution."
+        }
+      ],
+      "transitions": {
+        "DONE": "proposal-synthesizer",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-05-coordinator",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "proposal-synthesizer",
+      "agent": {
+        "id": "hub-proposal-engineer",
+        "name": "Sprint Proposal Synthesizer Engineer",
+        "phone": "2976",
+        "profile": "Владелец генерации proposal payload and managed sprint candidate without activating nginx-qa."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-006",
+          "queue": "worker-all",
+          "message": "Реализуй proposal synthesis. Из new_sprint classification формируй source-neutral proposal metadata и candidate sprint payload, совместимый с nginx-qa inbound proposal API. Поддержи либо direct pending JSON, либо Git ref + manifest_path. Генерация не должна активировать sprint. Добавь proposal_id/idempotency binding and lineage."
+        }
+      ],
+      "transitions": {
+        "DONE": "nginx-qa-client",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-06-proposal-synthesizer",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "nginx-qa-client",
+      "agent": {
+        "id": "hub-nginx-client-engineer",
+        "name": "nginx-qa Integration Client Engineer",
+        "phone": "2977",
+        "profile": "Владелец stable machine-to-machine client boundary to nginx-qa."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-007",
+          "queue": "worker-all",
+          "message": "Реализуй HTTP client к versioned nginx-qa pending-proposal API: auth token boundary, idempotent create, read/status polling, normalized errors, correlation IDs, retry/backoff and timeout. Никогда не читать nginx-qa runtime files напрямую. Добавь contract tests with fake nginx-qa server and duplicate submission."
+        }
+      ],
+      "transitions": {
+        "DONE": "telegram-observability",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-07-nginx-client",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "telegram-observability",
+      "agent": {
+        "id": "hub-telegram-engineer",
+        "name": "Telegram Observability Engineer",
+        "phone": "2978",
+        "profile": "Владелец operator notifications; Telegram is observability, not required machine transport."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-008",
+          "queue": "worker-all",
+          "message": "Реализуй Telegram operator notifications: proposal created, waiting for review, started, rejected, blocked/failed, completed when status is available. Сообщение содержит краткий summary and nginx-qa UI link when available. Telegram failure must not break proposal submission. Credentials only from local secret boundary."
+        }
+      ],
+      "transitions": {
+        "DONE": "service-runtime",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-08-telegram-observability",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "service-runtime",
+      "agent": {
+        "id": "hub-service-engineer",
+        "name": "Windows Service Runtime Engineer",
+        "phone": "2979",
+        "profile": "Владелец background service lifecycle, restart/recovery and local operational API."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-009",
+          "queue": "worker-all",
+          "message": "Сделай production-like service runtime: FastAPI control/health API, background adapter/coordinator tasks, graceful shutdown, persistence initialization, restart recovery and Windows service-friendly entry point. Service должен работать без tray UI. Добавь health/status endpoints and lifecycle tests."
+        }
+      ],
+      "transitions": {
+        "DONE": "tray-controller",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-09-service-runtime",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "tray-controller",
+      "agent": {
+        "id": "hub-tray-engineer",
+        "name": "Windows Tray Controller Engineer",
+        "phone": "2980",
+        "profile": "Владелец small operator tray shell; no business logic inside tray process."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-010",
+          "queue": "worker-all",
+          "message": "Реализуй Windows tray controller как отдельную оболочку над local service API. Показывай общий статус и adapters Running/Paused/Error, действия Open UI, Pause All, Resume All, Restart Service request and Exit tray. Tray crash/exit не должен останавливать Inbound Hub service. Добавь mock service tests and packaging notes."
+        }
+      ],
+      "transitions": {
+        "DONE": "qualification",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-10-tray-controller",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "qualification",
+      "agent": {
+        "id": "hub-qa-engineer",
+        "name": "Inbound Hub QA Engineer",
+        "phone": "2981",
+        "profile": "Независимый QA end-to-end flow, restart, dedupe, failure isolation, API contract and Windows operator shell."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-011",
+          "queue": "tester-all",
+          "message": "Проведи isolated end-to-end qualification: synthetic Email -> normalized event -> classification -> proposal -> fake nginx-qa API -> status -> Telegram notification; duplicate email no duplicate proposal; adapter failure isolation; restart recovery; no credentials in state/logs; nginx-qa unavailable retry; Telegram unavailable does not block proposal; service works without tray; tray does not own business logic; health/status accurate. Собери evidence and return PASS, FAIL, NEED_DECISION or STOP."
+        }
+      ],
+      "transitions": {
+        "PASS": "completed",
+        "FAIL": "continuity-coordinator",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-11-qualification",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "continuity-coordinator",
+      "agent": {
+        "id": "hub-continuity-coordinator",
+        "name": "Inbound Hub Continuity Coordinator",
+        "phone": "2970",
+        "profile": "Исправляет только future sprint-owned plan. Не включает autonomous correspondence and no external deployment authority."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-COORD",
+          "queue": "consultant-all",
+          "message": "Проанализируй blocker/result/review and return one RESUME_ARCHITECTURE, RESUME_EVENT, RESUME_EMAIL, RESUME_ADAPTER_RUNTIME, RESUME_COORDINATOR, RESUME_PROPOSAL, RESUME_NGINX, RESUME_TELEGRAM, RESUME_SERVICE, RESUME_TRAY, RESUME_QA or BLOCKED_EXTERNAL. Do not bypass reviews/preflight and do not introduce autonomous correspondence into MVP."
+        }
+      ],
+      "transitions": {
+        "RESUME_ARCHITECTURE": "architecture",
+        "RESUME_EVENT": "event-core",
+        "RESUME_EMAIL": "email-adapter",
+        "RESUME_ADAPTER_RUNTIME": "adapter-runtime",
+        "RESUME_COORDINATOR": "coordinator",
+        "RESUME_PROPOSAL": "proposal-synthesizer",
+        "RESUME_NGINX": "nginx-qa-client",
+        "RESUME_TELEGRAM": "telegram-observability",
+        "RESUME_SERVICE": "service-runtime",
+        "RESUME_TRAY": "tray-controller",
+        "RESUME_QA": "qualification",
+        "BLOCKED_EXTERNAL": "blocked-external"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-continuity-coordinator",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "completed",
+      "type": "terminal",
+      "status": "DONE",
+      "message": "Inbound Hub MVP passed isolated qualification. Production deployment remains an explicit operator action."
+    },
+    {
+      "id": "blocked-external",
+      "type": "terminal",
+      "status": "BLOCKED_EXTERNAL",
+      "message": "External credential, provider access, nginx-qa API availability or operator decision is required."
+    },
+    {
+      "id": "failed",
+      "type": "terminal",
+      "status": "FAILED",
+      "message": "Inbound Hub MVP failed qualification and requires repair/rework."
+    }
+  ]
+}
