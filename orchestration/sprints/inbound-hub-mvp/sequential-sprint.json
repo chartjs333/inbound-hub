@@ -126,7 +126,7 @@
         }
       ],
       "transitions": {
-        "DONE": "adapter-runtime",
+        "DONE": "telegram-adapter",
         "NEED_DECISION": "continuity-coordinator",
         "STOP": "continuity-coordinator"
       },
@@ -134,6 +134,34 @@
         "access": "write",
         "git": {
           "assigned_branch": "agent/hub-03-email-adapter",
+          "existing_branch_policy": "create"
+        }
+      }
+    },
+    {
+      "id": "telegram-adapter",
+      "agent": {
+        "id": "hub-telegram-source-engineer",
+        "name": "Telegram Source Adapter Engineer",
+        "phone": "2982",
+        "profile": "Владелец Telegram как полноценного source adapter: inbound messages/events, thread/chat identity, permissions and dedupe."
+      },
+      "tasks": [
+        {
+          "task_id": "HUB-003A",
+          "queue": "worker-all",
+          "message": "Реализуй Telegram source adapter отдельно от Telegram observability publisher. Adapter принимает allowed updates/messages/channel posts, проверяет configured allowlists/secret boundary, преобразует их в normalized InboundEvent, сохраняет chat/user/message/thread identity, dedupe and retry semantics. Capabilities раздели на read/receive и send; в MVP inbound adapter не должен автоматически отвечать. Добавь fake Telegram API/webhook tests."
+        }
+      ],
+      "transitions": {
+        "DONE": "adapter-runtime",
+        "NEED_DECISION": "continuity-coordinator",
+        "STOP": "continuity-coordinator"
+      },
+      "workspace": {
+        "access": "write",
+        "git": {
+          "assigned_branch": "agent/hub-03a-telegram-adapter",
           "existing_branch_policy": "create"
         }
       }
@@ -150,7 +178,7 @@
         {
           "task_id": "HUB-004",
           "queue": "worker-all",
-          "message": "Реализуй общий adapter runtime: registry/plugins, Running/Paused/Error states, configurable poll intervals, per-adapter last-check/last-success/error metadata, graceful start/stop and independent failure isolation. Email adapter подключи через этот runtime. Оставь extension points для Telegram/Folder/Other."
+          "message": "Реализуй общий adapter runtime: registry/plugins, Running/Paused/Error states, configurable poll/webhook lifecycle, per-adapter capabilities (receive/read/send/write), last-check/last-success/error metadata, graceful start/stop and independent failure isolation. Подключи Email и Telegram source adapters через этот runtime. Оставь extension points для Folder/CRM/Other."
         }
       ],
       "transitions": {
@@ -346,7 +374,7 @@
         {
           "task_id": "HUB-011",
           "queue": "tester-all",
-          "message": "Проведи isolated end-to-end qualification: synthetic Email -> normalized event -> classification -> proposal -> fake nginx-qa API -> status -> Telegram notification; duplicate email no duplicate proposal; adapter failure isolation; restart recovery; no credentials in state/logs; nginx-qa unavailable retry; Telegram unavailable does not block proposal; service works without tray; tray does not own business logic; health/status accurate. Собери evidence and return PASS, FAIL, NEED_DECISION or STOP."
+          "message": "Проведи isolated end-to-end qualification: synthetic Email и Telegram -> normalized event -> classification -> proposal -> fake nginx-qa API -> status -> Telegram operator notification; Email/Telegram equivalent content yields equivalent normalized/domain routing where applicable; duplicate email/telegram update no duplicate proposal; adapter capability boundaries enforced; adapter failure isolation; restart recovery; no credentials in state/logs; nginx-qa unavailable retry; Telegram notification failure does not block proposal; service works without tray; tray does not own business logic; health/status accurate. Собери evidence and return PASS, FAIL, NEED_DECISION or STOP."
         }
       ],
       "transitions": {
@@ -375,7 +403,7 @@
         {
           "task_id": "HUB-COORD",
           "queue": "consultant-all",
-          "message": "Проанализируй blocker/result/review and return one RESUME_ARCHITECTURE, RESUME_EVENT, RESUME_EMAIL, RESUME_ADAPTER_RUNTIME, RESUME_COORDINATOR, RESUME_PROPOSAL, RESUME_NGINX, RESUME_TELEGRAM, RESUME_SERVICE, RESUME_TRAY, RESUME_QA or BLOCKED_EXTERNAL. Do not bypass reviews/preflight and do not introduce autonomous correspondence into MVP."
+          "message": "Проанализируй blocker/result/review and return one RESUME_ARCHITECTURE, RESUME_EVENT, RESUME_EMAIL, RESUME_TELEGRAM_ADAPTER, RESUME_ADAPTER_RUNTIME, RESUME_COORDINATOR, RESUME_PROPOSAL, RESUME_NGINX, RESUME_TELEGRAM, RESUME_SERVICE, RESUME_TRAY, RESUME_QA or BLOCKED_EXTERNAL. Do not bypass reviews/preflight and do not introduce autonomous correspondence into MVP."
         }
       ],
       "transitions": {
@@ -390,7 +418,8 @@
         "RESUME_SERVICE": "service-runtime",
         "RESUME_TRAY": "tray-controller",
         "RESUME_QA": "qualification",
-        "BLOCKED_EXTERNAL": "blocked-external"
+        "BLOCKED_EXTERNAL": "blocked-external",
+        "RESUME_TELEGRAM_ADAPTER": "telegram-adapter"
       },
       "workspace": {
         "access": "write",
