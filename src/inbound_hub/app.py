@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 
-
 app = FastAPI(title="Inbound Hub", version="0.1.0")
 
 
