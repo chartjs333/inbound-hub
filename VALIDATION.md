@@ -241,3 +241,49 @@ NGINX_QA_SOURCE points to unchanged commit `627b478e29f5f7254d279363790f46e92c11
 ## Static security review
 
 Initial Bandit findings B404/B603/B607 in the committed-profile Git reader were reviewed. Git resolves to an absolute executable; leading-option refs are rejected; fixed argv and no shell are used. B404/B603 carry explicit reviewed suppressions. This is not independent penetration testing.
+
+# Architecture independence audit — 2026-10-24
+
+Supersedes the historical source-based integration procedure above. PR #1 audited at
+ d518e2f1411da188699da47565f2f564da1fd95b; PR #2 at
+ d31f6bd54f70a7e7e2e4295b43424b81dc272155.
+
+Finding: tests/test_nginx_actual.py required NGINX_QA_SOURCE, inserted a foreign checkout
+into sys.path, imported its internal main, changed working directory and monkeypatched server
+file/state globals. Temporary state was isolated, but test/release independence was violated.
+The release script also required that checkout. Replaced the test with consumer HTTP contract
+checks and removed the checkout prerequisite. Added an executable-source architecture guard.
+No production implementation changes; Bridge requires no independence fix.
+
+Manual inspection of both src trees and their configuration, storage and HTTP clients found no
+foreign file reads/writes, shared database/state, foreign working-directory requirements or
+nginx-qa internal imports. Hub owns its SQLite state; Bridge owns its SQLite/artifact state.
+Operator-configured artist-profile Git repositories are domain input, not nginx-qa internals.
+Historical local paths in prior validation logs are evidence, not runtime configuration.
+
+Pending API: POST /api/v1/projects/{id}/pending-sprints and GET /{pending_id}/status,
+version 1 proposal envelope, scoped Bearer header and correlation ID. HTTPS required except
+explicit loopback HTTP. Redirects are not followed. Response envelopes are JSON dictionaries;
+full provider-side schema conformance is not established by mocked consumer tests.
+Bridge: typed request schema, HMAC SHA-256 over timestamp + '.' + exact body, constant-time
+signature comparison, 60-second freshness and scoped assignment checks. Configured HTTPS
+callbacks and fail-closed Bearer introspection only; no filesystem fallback. README documents
+these contracts, but nginx-qa callback/introspection support is absent/unqualified. This audit
+confirms code independence, not live interoperability or production readiness.
+
+Commands from workspace root (no full regression, builds or live service calls):
+
+- `PYTHONPATH=independence-audit/src inbound-hub/.venv/bin/python -m pytest independence-audit/tests/test_nginx_actual.py independence-audit/tests/test_architecture.py -q`
+  Result: 7 passed in 0.23s.
+- `PYTHONPATH=channel-bridge/channel_bridge/src inbound-hub/.venv/bin/python -m pytest channel-bridge/channel_bridge/tests/test_gateway.py -q -k 'http_intake or transport_replay or https_callbacks or assignment_introspection or unauthorized_intake'`
+  Result: 9 passed, 22 deselected in 0.12s; existing Starlette/httpx deprecation warning.
+- `inbound-hub/.venv/bin/python -m ruff check --config independence-audit/pyproject.toml independence-audit/tests/test_nginx_actual.py independence-audit/tests/test_architecture.py --fix`
+  Result: one import-format issue fixed, zero remaining.
+- `rg -n 'nginx|sys.path|chdir|importlib' inbound-hub/src channel-bridge/channel_bridge/src`
+  Result: only Hub-owned integration imports, endpoint configuration and descriptive text;
+  no foreign imports/path mutation. Source-based test dependency found separately and removed.
+- `git -C channel-bridge diff --exit-code`: exit 0.
+- `git -C nginx-qa-reference status --porcelain`: empty; no changes.
+
+New branch targets work/musician-booking-completion for a minimal stacked review. Existing PRs,
+main, source branches, services and production data are unchanged. No merge or deployment.

@@ -60,7 +60,9 @@ Tray exiting does not stop the service. The optional `inbound-hub-windows` entry
 6. Independent security review, load/soak tests, backup/restore and disaster recovery drills,
    retention policy and production TLS/secret rotation/monitoring acceptance remain outstanding.
 
-Run `python scripts/verify_release.py` for required automated checks; missing source is a blocker.
+Run `python scripts/verify_release.py` for local automated checks; no external checkout is required.
+The previous in-process nginx-qa test has been replaced by consumer HTTP contract tests.
+Historical server-code results above are not current live interoperability evidence.
 Passing this script alone does not satisfy the external/manual checks above. Production-ready must
 not be claimed until every required check has evidence. See `VALIDATION.md`, `SECURITY_SCAN.json`
 and `DEPENDENCY_AUDIT.json` for actual results, not inferred readiness.
