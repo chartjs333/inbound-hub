@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from agent_channel_bridge.api import create_app
-from agent_channel_bridge.gateway import Gateway, canonical, signature
+from agent_channel_bridge.gateway import Gateway, plugin_message, signature
 from agent_channel_bridge.models import Channel, Plugin, Request
 from agent_channel_bridge.simulator import (
     NginxQaSimulator,
@@ -78,7 +78,7 @@ def device(gateway):
     )
     gateway.register_plugin(
         plugin,
-        signature(PLUGINKEY, "manifest-v1", canonical(plugin.model_dump(mode="json")).encode()),
+        signature(PLUGINKEY, "manifest-v1", plugin_message(plugin)),
     )
     gateway.register_checkpoint("qr", "project", "device", "scope", "simulated")
     gateway.register_channel(
@@ -404,3 +404,143 @@ def test_policy_change_invalidates_existing_grant(system):
     g.dispatch(adapter)
     assert not adapter.deliveries
     assert g.db.execute("SELECT status FROM requests").fetchone()[0] == "rejected"
+
+
+def test_assignment_introspection_fails_closed():
+    import httpx
+
+    from agent_channel_bridge.introspection import ActiveAssignmentClient
+    from agent_channel_bridge.models import Request
+
+    req = Request(
+        request_id="r",
+        idempotency_key="r",
+        correlation_id="c",
+        project_id="p",
+        sprint_id="s",
+        assignment_id="a",
+        agent_id="agent",
+        channel_id="human",
+        operation="send_message",
+        created_at=0,
+    )
+    expected = {
+        "project_id": "p",
+        "sprint_id": "s",
+        "assignment_id": "a",
+        "agent_id": "agent",
+        "active": True,
+    }
+    for response, allowed in [
+        (httpx.Response(200, json=expected), True),
+        (httpx.Response(200, json={**expected, "project_id": "other"}), False),
+        (httpx.Response(404), False),
+        (httpx.Response(200, json={"active": True}), False),
+    ]:
+        client = ActiveAssignmentClient(
+            "https://auth.invalid/check",
+            "secret",
+            httpx.Client(transport=httpx.MockTransport(lambda r, response=response: response)),
+        )
+        assert client(req) is allowed
+
+
+def test_second_worker_does_not_deliver_while_lock_is_owned(system):
+    from filelock import FileLock
+
+    g, _, _ = system
+    submit(g, request(g))
+    adapter = SimulatedAdapter()
+    with FileLock(g.worker_lock.lock_file):
+        g.dispatch(adapter)
+    assert not adapter.deliveries
+    g.dispatch(adapter)
+    assert len(adapter.deliveries) == 1
+
+
+def test_async_fallback_does_not_bypass_capability(system):
+    g, _, _ = system
+    channel = g.get("channel", "human")
+    channel["capabilities"] = ["request_live_session"]
+    g.register_channel(Channel(**channel))
+    submit(g, request(g, operation="request_live_session"))
+    adapter = SimulatedAdapter()
+    g.dispatch(adapter)
+    assert not adapter.deliveries
+
+
+def test_read_only_http_adapter_observation(system, tmp_path):
+    import httpx
+
+    from agent_channel_bridge.adapters import ReadOnlyHttpAdapter
+    from agent_channel_bridge.security import ArtifactStore
+
+    g, _, _ = system
+    _, grant = device(g)
+    g.artifacts = ArtifactStore(tmp_path / "artifacts")
+
+    def read(req):
+        assert req.method == "GET"
+        assert str(req.url) == "https://device.invalid/read"
+        return httpx.Response(
+            200, content=b'{"temperature":23}', headers={"Content-Type": "application/json"}
+        )
+
+    adapter = ReadOnlyHttpAdapter(
+        "https://device.invalid/read", client=httpx.Client(transport=httpx.MockTransport(read))
+    )
+    submit(
+        g,
+        request(
+            g, channel_id="scope", operation="request_observation", payload={"grant_id": grant}
+        ),
+    )
+    g.dispatch(adapter)
+    assert g.db.execute("SELECT status FROM requests").fetchone()[0] == "response_received"
+    with pytest.raises(PermissionError):
+        adapter.send(request(g), "configure_device")
+
+
+def test_plugin_upgrade_invalidates_grant(system):
+    g, _, _ = system
+    _, grant = device(g)
+    submit(
+        g,
+        request(
+            g, channel_id="scope", operation="request_observation", payload={"grant_id": grant}
+        ),
+    )
+    manifest = Plugin(**g.get("plugin", "microscope")).model_copy(update={"version": "2.0"})
+    g.register_plugin(manifest, signature(PLUGINKEY, "manifest-v1", plugin_message(manifest)))
+    adapter = SimulatedAdapter()
+    g.dispatch(adapter)
+    assert not adapter.deliveries
+
+
+def test_concurrent_duplicate_intake_is_atomic(system):
+    from concurrent.futures import ThreadPoolExecutor
+
+    g, _, _ = system
+    req = request(g)
+    with ThreadPoolExecutor(max_workers=8) as workers:
+        ids = list(workers.map(lambda _: submit(g, req), range(64)))
+    assert set(ids) == {"r1"}
+    assert g.db.execute("SELECT count(*) FROM requests").fetchone()[0] == 1
+    assert g.db.execute("SELECT count(*) FROM events").fetchone()[0] == 1
+
+
+def test_database_backup_restore_keeps_outbox(system, tmp_path):
+    import sqlite3
+
+    g, nginx, now = system
+    submit(g, request(g))
+    backup = str(tmp_path / "restore.db")
+    with sqlite3.connect(backup) as connection:
+        g.db.backup(connection)
+    restored = Gateway(backup, KEY, IDKEY, PLUGINKEY, nginx.active, lambda: now[0])
+    adapter = SimulatedAdapter()
+    restored.dispatch(adapter)
+    restored.callbacks(nginx.receive)
+    assert len(adapter.deliveries) == 1 and len(nginx.events) == 2
+    assert restored.db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    restored.close()

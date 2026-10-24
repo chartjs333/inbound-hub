@@ -13,12 +13,12 @@ class Request(WireModel):
     schema_version: Literal[1] = 1
     request_id: str = Field(min_length=1, max_length=128)
     idempotency_key: str = Field(min_length=1, max_length=128)
-    correlation_id: str
-    project_id: str
-    sprint_id: str
-    assignment_id: str
-    agent_id: str
-    channel_id: str
+    correlation_id: str = Field(min_length=1, max_length=256)
+    project_id: str = Field(min_length=1, max_length=256)
+    sprint_id: str = Field(min_length=1, max_length=256)
+    assignment_id: str = Field(min_length=1, max_length=256)
+    agent_id: str = Field(min_length=1, max_length=256)
+    channel_id: str = Field(min_length=1, max_length=256)
     operation: Operation
     payload: dict[str, Any] = Field(default_factory=dict)
     created_at: float
@@ -31,8 +31,8 @@ class Event(WireModel):
     schema_version: Literal[1] = 1
     event_id: str
     request_id: str
-    correlation_id: str
-    channel_id: str
+    correlation_id: str = Field(min_length=1, max_length=256)
+    channel_id: str = Field(min_length=1, max_length=256)
     event_type: Literal[
         "accepted",
         "rejected",
@@ -52,11 +52,11 @@ class Event(WireModel):
 
 
 class Channel(WireModel):
-    channel_id: str
+    channel_id: str = Field(min_length=1, max_length=256)
     type: Literal["human", "device", "service"]
     capabilities: set[Operation]
-    owner: str
-    project_id: str
+    owner: str = Field(min_length=1, max_length=256)
+    project_id: str = Field(min_length=1, max_length=256)
     agents: set[str]
     device_id: str | None = None
     plugin_id: str | None = None

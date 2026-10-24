@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from .gateway import Gateway
 
 
-def create_app(gateway: Gateway) -> FastAPI:
+def create_app(gateway: Gateway, *, artifacts=None, idp_url=None, origin=None) -> FastAPI:
     app = FastAPI(title="Agent Channel Bridge v1")
 
     @app.post("/v1/channel-requests")
@@ -28,4 +28,10 @@ def create_app(gateway: Gateway) -> FastAPI:
             raise HTTPException(422, "Invalid request or idempotency conflict") from exc
         return {"request_id": ident}
 
+    if artifacts is not None:
+        from .mobile import mount_mobile
+
+        if gateway.trust is None:
+            raise ValueError("Mobile API requires production public-key identity verification")
+        mount_mobile(app, gateway, artifacts, idp_url, origin)
     return app
