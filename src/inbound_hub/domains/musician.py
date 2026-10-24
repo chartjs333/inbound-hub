@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
+import shutil
+import subprocess  # nosec B404 - fixed git argv; never a shell
 from datetime import date
 from pathlib import Path
 from typing import Any, Literal, cast
@@ -105,6 +106,11 @@ class Profiles:
 
     def __init__(self, repository: Path, ref: str = "HEAD"):
         self.repository = repository
+        self.git_binary = shutil.which("git")
+        if not self.git_binary or not Path(self.git_binary).is_absolute():
+            raise ValueError("Trusted git executable not found")
+        if not ref or ref.startswith("-"):
+            raise ValueError("Invalid profile ref")
         self.commit = self._git("rev-parse", "--verify", f"{ref}^{{commit}}").strip()
         common = self.read("profiles/musician-booking/profile.yaml")
         self.common = yaml.safe_load(common)
@@ -136,7 +142,9 @@ class Profiles:
                 self.artists[artist_id] = profile
 
     def _git(self, *args: str) -> str:
-        return subprocess.check_output(["git", "-C", str(self.repository), *args], text=True)
+        return subprocess.check_output(  # nosec B603 - fixed executable/argv, validated ref, no shell
+            [cast(str, self.git_binary), "-C", str(self.repository), *args], text=True
+        )
 
     def read(self, path: str) -> str:
         if ".." in Path(path).parts or Path(path).is_absolute():

@@ -1,6 +1,8 @@
+> Updated implementation and remaining release blockers: [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md).
+
 # Branch dependency audit and implementation roadmap
 
-Snapshot: 2026-10-24. Repository: chartjs333/inbound-hub. No existing PRs at audit.
+Initial dependency audit: 2026-10-24. Repository: chartjs333/inbound-hub. PR #1 and #2 now exist and remain Draft. Current implementation status is in PRODUCTION_READINESS.md; the original audit below records branch ownership.
 
 | Branch | Head | Relationship |
 |---|---|---|
@@ -40,7 +42,9 @@ clarification. Dates like “next Friday”, inferred venue names, inferred curr
 are intentionally not guessed. Real artist profiles and mappings must be supplied by the operator;
 tests create two synthetic, committed artist repositories. No credentials or personal profiles ship.
 
-The coordinator is a library integration point: construct Profiles(repo, ref), MusicianBookingPlugin,
-DomainPluginRegistration and Coordinator, then await handle(event, 'musician-booking').
-The existing health API is retained. No external send, sprint activation or nginx-qa submission occurs.
-Production ingestion wiring, nginx-qa contract qualification and human domain review remain external.
+The coordinator is wired into the durable ingestion service. Real nginx-qa pending creation/status
+has now been tested against its unchanged ASGI application, including the full Email → six-role
+booking proposal path. No sprint activation occurs. IMAP, Telegram and folder sources, authenticated
+control API, tray and optional Windows SCM host are implemented; platform and live staging
+qualification remain open. See PRODUCTION_READINESS.md and VALIDATION.md for the current checks
+and exact remaining requirements. The two PRs remain independent and Draft.

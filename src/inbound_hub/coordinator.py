@@ -21,4 +21,26 @@ class Coordinator:
             if escalation.required
             else await plugin.propose(extraction, classification, context)
         )
-        return {"context": extraction.data, "proposal": proposal, "escalation": escalation}
+        extracted_route = extraction.data.get("route")
+        if not isinstance(extracted_route, str):
+            extracted_route = "clarification_required"
+        route = {"pending_proposal": "new_sprint", "correspondence": "correspondence_only"}.get(
+            extracted_route, extracted_route
+        )
+        update_intent = None
+        # Only operator-bound source metadata identifies an existing sprint; message text cannot.
+        if proposal and event.metadata.get("sprint_id"):
+            route = "sprint_update"
+            update_intent = {
+                "sprint_id": event.metadata["sprint_id"],
+                "status": "requires_review",
+                "context": extraction.data,
+            }
+            proposal = None
+        return {
+            "context": extraction.data,
+            "proposal": proposal,
+            "escalation": escalation,
+            "route": route,
+            "update_intent": update_intent,
+        }
