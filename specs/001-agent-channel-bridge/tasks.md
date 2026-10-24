@@ -16,3 +16,7 @@ Done: Hub handles human/device simulation with traceable responses; no productio
 - [ ] HUB-12 Build scoped capability-grant broker, human/agent policy intersection, step-up PIN-unlock or one-time token proof, expiry and revocation.
 - [ ] HUB-13 Reject unapproved plugin, forged QR, replayed challenge, stale grant and cross-project privilege escalation; log audit.
 - [ ] HUB-14 Integrate simulated microscope phone module read-only observation with restricted plugin grant and verify end-to-end.
+
+
+- [ ] HUB-15 Add optional cryptographic smart-card reader login adapter with single-tap session initiation and trusted device binding.
+- [ ] HUB-16 Implement per-action configurable assurance attribute, step-up checks, session expiry/revocation/user switching and shared workstation tests.
